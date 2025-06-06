@@ -51,25 +51,31 @@ Respond in JSON format as:
     content = response.choices[0].message.content.strip()
     return extract_json_from_response(content)
 
-def main():
-    subject_input = input("Enter your email subject line: ").strip()
-    message_input = input("Enter your email body message: ").strip()
+def choose_option(options, label):
+    """Utility function to display options and get a valid selection from user."""
+    print(f"\n🔹 {label} Suggestions:")
+    for i, option in enumerate(options, 1):
+        print(f"{i}. {option}\n")
 
+    while True:
+        try:
+            choice = int(input(f"Choose a {label.lower()} number (1-{len(options)}): "))
+            if 1 <= choice <= len(options):
+                return choice, options[choice - 1]
+            else:
+                print(f"❗ Please enter a number between 1 and {len(options)}.")
+        except ValueError:
+            print("❗ Invalid input. Please enter a number.")
+
+def main():
+    subject_input = input("📩 Enter your email subject line: ").strip()
+    message_input = input("📝 Enter your email body message: ").strip()
+
+    print("\n⏳ Generating suggestions from Groq...")
     suggestions = generate_suggestions(subject_input, message_input)
 
-    print("\n🔹 Subject Suggestions:")
-    for i, subj in enumerate(suggestions["subject_suggestions"], 1):
-        print(f"{i}. {subj}")
-
-    subject_choice = int(input("Choose subject number (1-5): "))
-    chosen_subject = suggestions["subject_suggestions"][subject_choice - 1]
-
-    print("\n🔹 Message Suggestions:")
-    for i, msg in enumerate(suggestions["message_suggestions"], 1):
-        print(f"{i}. {msg}\n")
-
-    message_choice = int(input("Choose message number (1-5): "))
-    chosen_message = suggestions["message_suggestions"][message_choice - 1]
+    subject_choice, chosen_subject = choose_option(suggestions["subject_suggestions"], "Subject")
+    message_choice, chosen_message = choose_option(suggestions["message_suggestions"], "Message")
 
     output = {
         "selected_subject_number": subject_choice,
@@ -77,6 +83,7 @@ def main():
         "selected_message_number": message_choice,
         "selected_message": chosen_message
     }
+
 
     with open("final_selection.json", "w") as f:
         json.dump(output, f, indent=4)
