@@ -41,13 +41,36 @@ def get_recent_repliers(service):
                 repliers.add(email.lower())
     return repliers
 
-def remove_responders_from_csv(csv_path, repliers):
+# def remove_responders_from_csv(csv_path, repliers):
+#     df = pd.read_csv(csv_path)
+#     initial_count = len(df)
+#     df['email'] = df['email'].str.lower()
+#     df = df[~df['email'].isin(repliers)]
+#     df.to_csv(csv_path, index=False)
+#     print(f"✅ Removed {initial_count - len(df)} replied influencers. CSV updated.")
+
+import pandas as pd
+
+def remove_responders_from_csv(csv_path, repliers, responded_path='responded.csv'):
     df = pd.read_csv(csv_path)
-    initial_count = len(df)
-    df['email'] = df['email'].str.lower()
-    df = df[~df['email'].isin(repliers)]
-    df.to_csv(csv_path, index=False)
-    print(f"✅ Removed {initial_count - len(df)} replied influencers. CSV updated.")
+
+    # Filter the rows that match the repliers
+    mask = df['email'].isin(repliers)
+    responded_df = df[mask]
+    remaining_df = df[~mask]
+
+    # Save the replied ones to responded.csv (append if file exists)
+    try:
+        existing_responded = pd.read_csv(responded_path)
+        responded_df = pd.concat([existing_responded, responded_df], ignore_index=True).drop_duplicates(subset=['email'])
+    except FileNotFoundError:
+        pass  # File doesn't exist yet, will be created fresh
+
+    responded_df.to_csv(responded_path, index=False)
+    remaining_df.to_csv(csv_path, index=False)
+
+    print(f"✅ Moved {len(responded_df)} replied influencers to '{responded_path}' and updated '{csv_path}'.")
+
 
 def main():
     creds = gmail_authenticate()
